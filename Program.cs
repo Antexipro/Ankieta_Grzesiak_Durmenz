@@ -1,4 +1,4 @@
-﻿using Ankieta_Grzesiak_Durmenz.Models;
+using Ankieta_Grzesiak_Durmenz.Models;
 using Ankieta_Grzesiak_Durmenz.Interfaces;
 using Ankieta_Grzesiak_Durmenz.Services;
 using System.Text.Json;
@@ -12,79 +12,141 @@ namespace Ankieta_Grzesiak_Durmenz
         static void Main(string[] args)
         {
             SurveyFileService surveyFileService = new SurveyFileService();
-            Survey survey = null;
+            List<Survey> surveys = new List<Survey>();
+            Survey currentSurvey = null;
             bool running = true;
 
-            while (running != false)
+            while (running)
             {
+                Console.Clear();
                 DisplayMenu();
                 string choice = Console.ReadLine();
+
                 if (string.IsNullOrWhiteSpace(choice))
                 {
                     Console.WriteLine("Wybór nie może być pusty!");
+                    Pause();
                     continue;
                 }
 
                 switch (choice)
                 {
                     case "1":
-                        survey = CreateSurvey();
+                        var newSurvey = CreateSurvey();
+                        surveys.Add(newSurvey);
+                        currentSurvey = newSurvey;
+                        Console.WriteLine("Dodano ankietę!");
                         break;
+
                     case "2":
+                        if (surveys.Count == 0)
+                        {
+                            Console.WriteLine("Brak ankiet!");
+                            break;
+                        }
+
+                        Console.WriteLine("\nDostępne ankiety:");
+
+                        for (int i = 0; i < surveys.Count; i++)
+                            Console.WriteLine($"{i + 1}. {surveys[i].Title}");
+
+                        Console.Write("\nWybierz ankietę: ");
+
+                        if (int.TryParse(Console.ReadLine(), out int index) &&
+                            index >= 1 && index <= surveys.Count)
+                        {
+                            currentSurvey = surveys[index - 1];
+                        }
+                        else
+                        {
+                            Console.WriteLine("Zły wybór!");
+                            break;
+                        }
+
                         Console.WriteLine();
-                        if (survey != null)
-                            survey.Fill();
+                        currentSurvey.Fill();
                         break;
+
                     case "3":
-                        Console.WriteLine();
-                        if (survey != null)
-                            survey.ShowResults();
+                        if (currentSurvey != null)
+                            currentSurvey.ShowResults();
+                        else
+                            Console.WriteLine("Brak wybranej ankiety!");
                         break;
+
                     case "4":
-                        Console.Write("\nPodaj nazwę ankiety: ");
+                        if (currentSurvey == null)
+                        {
+                            Console.WriteLine("Brak ankiety!");
+                            break;
+                        }
+
+                        Console.Write("\nPodaj nazwę pliku: ");
                         string name = Console.ReadLine();
+
                         if (string.IsNullOrWhiteSpace(name))
                         {
-                            Console.WriteLine("Błąd");
-                            return;
+                            Console.WriteLine("Błąd nazwy!");
+                            break;
                         }
-                        if (survey != null)
-                            surveyFileService.SaveToTxt(survey, $"{name}.txt");
-                        else
-                            Console.WriteLine("Najpierw utwórz ankietę!");
+
+                        surveyFileService.SaveToTxt(currentSurvey, $"{name}.txt");
                         break;
+
                     case "5":
-                        Console.WriteLine("Do widzenia!");
                         running = false;
+                        Console.WriteLine("Do widzenia!");
                         break;
+
                     default:
                         Console.WriteLine("Wybierz opcję od 1 - 5");
                         break;
                 }
+
+                Pause();
             }
+        }
+
+        private static void Pause()
+        {
+            Console.WriteLine("Kliknij klawisz...");
+            Console.ReadKey();
         }
 
         private static Survey? CreateSurvey()
         {
-            Console.Write("\nTytuł ankiety: ");
-            string title = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(title))
+            string title;
+            while (true)
             {
+                Console.Write("\nTytuł ankiety: ");
+                title = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(title))
+                    break;
                 Console.WriteLine("Tytuł nie może być pusty!");
             }
-            Console.Write("Ile dni ma trwać ankieta: ");
-            int.TryParse(Console.ReadLine(), out int days);
-            if(days < 1 || days > 365)
+
+            int days;
+            while (true)
             {
-                Console.WriteLine("Zła ilość dni!");
+                Console.Write("Ile dni ma trwać ankieta: ");
+                if (int.TryParse(Console.ReadLine(), out days) && days >= 1 && days <= 365)
+                    break;
+                Console.WriteLine("Podaj liczbę od 1 do 365!");
             }
-            Console.WriteLine("\n1.Jenokrotnego wyboru");
-            Console.WriteLine("2.Wielkorotnego wyboru");
-            string type = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(type))
+
+            string type;
+            while (true)
             {
-                Console.WriteLine("Typ nie może być pusty!");
+                Console.WriteLine("\n1. Jednokrotnego wyboru");
+                Console.WriteLine("2. Wielokrotnego wyboru");
+                type = Console.ReadLine();
+
+                if (type == "1" || type == "2")
+                    break;
+
+                Console.WriteLine("Wybierz 1 lub 2!");
             }
+
 
             Survey survey;
 
@@ -93,34 +155,54 @@ namespace Ankieta_Grzesiak_Durmenz
             else
                 survey = new MultipleSurvey(title, DateTime.Now.AddDays(days));
 
-            Console.Write("Ile pytań ma mieć ankieta?: ");
-            int.TryParse(Console.ReadLine(), out int questionNumber);
-            if(questionNumber < 2 || questionNumber > 100)
+            int questionNumber;
+            while (true)
             {
-                Console.WriteLine("Zła ilość pytań min.2 max.100");
+                Console.Write("\nIle pytań ma mieć ankieta?: ");
+                if (int.TryParse(Console.ReadLine(), out questionNumber) && questionNumber >= 2 && questionNumber <= 100)
+                    break;
+
+                Console.WriteLine("Min. 2, max. 100!");
             }
+
             for (int q = 0; q < questionNumber; q++)
             {
-                Console.Write($"Pytanie {q+1}: ");
-                string content = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(content))
+                string content;
+                while (true)
                 {
+                    Console.Write($"\nPytanie {q + 1}: ");
+                    content = Console.ReadLine();
+                    if (!string.IsNullOrWhiteSpace(content))
+                        break;
+
                     Console.WriteLine("Zawartość nie może być pusta!");
                 }
 
+
                 List<string> answers = new List<string>();
 
-                Console.Write("Ile odpowiedzi?: ");
-                int count = int.Parse(Console.ReadLine());
-                if(count < 2 || count > 10)
+                int count;
+                while (true)
                 {
-                    Console.WriteLine("Zła ilośc odpowiedzi! min.2 max.10");
+                    Console.Write("\nIle odpowiedzi?: ");
+                    if (int.TryParse(Console.ReadLine(), out count) && count >= 2 && count <= 10)
+                        break;
+
+                    Console.WriteLine("Min.2 Max.10 odpowiedzi!");
                 }
 
                 for (int i = 0; i < count; i++)
                 {
-                    Console.Write($"{(char)('A' + i)}: ");
-                    answers.Add(Console.ReadLine());
+                    string answer;
+                    while (true)
+                    {
+                        Console.Write($"{(char)('A' + i)}: ");
+                        answer = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(answer))
+                            break;
+                        Console.WriteLine("Odpowiedź nie może być pusta!");
+                    }
+                    answers.Add(answer);
                 }
 
                 if (type == "1")
