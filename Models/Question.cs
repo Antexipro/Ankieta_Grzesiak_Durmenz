@@ -44,7 +44,7 @@ namespace Ankieta_Grzesiak_Durmenz.Models
             {
                 double percent = totalVotes == 0 ? 0: (double)Votes[i] / totalVotes * 100;
 
-                Console.WriteLine($"{Answers[i]} - {Votes[i]} głosów ({percent:F1}%)");
+                Console.WriteLine($"{Answers[i]} - {Votes[i]} głosów ({percent}%)");
             }
         }
     }
