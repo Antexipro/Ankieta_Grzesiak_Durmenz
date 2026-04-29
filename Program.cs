@@ -68,12 +68,29 @@ namespace Ankieta_Grzesiak_Durmenz
                         break;
 
                     case "3":
-                        if (currentSurvey != null)
-                            currentSurvey.ShowResults();
-                        else
-                            Console.WriteLine("Brak wybranej ankiety!");
-                        break;
+                        if (surveys.Count == 0)
+                        {
+                            Console.WriteLine("Brak ankiet!");
+                            break;
+                        }
 
+                        Console.WriteLine("\nDostępne ankiety:");
+
+                        for (int i = 0; i < surveys.Count; i++)
+                            Console.WriteLine($"{i + 1}. {surveys[i].Title}");
+
+                        Console.Write("\nWybierz ankietę do wyświetlenia wyników: ");
+
+                        if (int.TryParse(Console.ReadLine(), out int resultIndex) &&
+                            resultIndex >= 1 && resultIndex <= surveys.Count)
+                        {
+                            surveys[resultIndex - 1].ShowResults();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Zły wybór!");
+                        }
+                        break;
                     case "4":
                         if (currentSurvey == null)
                         {
